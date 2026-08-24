@@ -19,9 +19,9 @@ CineTitlePF1L:
         byte $10,$17,$11,$11,$0E,$00,$00,$00
         byte $00,$00,$00,$00,$00,$00,$00,$00
         byte $00,$00,$00,$00,$00,$00,$00,$00
-        byte $00,$00,$03,$0F,$3F,$FF,$00,$00
         byte $00,$00,$00,$00,$00,$00,$00,$00
         byte $00,$00,$00,$00,$00,$00,$00,$00
+        byte $00,$00,$00,$03,$0F,$3F,$FF,$00
         byte $00,$FF
 
 CineTitlePF2L:
@@ -29,10 +29,10 @@ CineTitlePF2L:
         byte $04,$04,$04,$78,$00,$00,$38,$44
         byte $44,$7C,$44,$44,$44,$00,$00,$00
         byte $00,$00,$00,$00,$00,$00,$00,$00
-        byte $00,$00,$00,$00,$00,$00,$00,$F0
-        byte $FC,$FF,$FF,$FF,$FF,$FF,$00,$00
         byte $00,$00,$00,$00,$00,$00,$00,$00
         byte $00,$00,$00,$00,$00,$00,$00,$00
+        byte $00,$00,$00,$00,$00,$00,$00,$00
+        byte $F0,$FC,$FF,$FF,$FF,$FF,$FF,$00
         byte $00,$FF
 
         align 256
@@ -41,10 +41,10 @@ CineTitlePF0R:
         byte $80,$80,$80,$80,$00,$00,$20,$60
         byte $A0,$A0,$20,$20,$20,$00,$00,$00
         byte $00,$00,$00,$00,$00,$00,$00,$00
-        byte $00,$00,$00,$00,$00,$00,$00,$F0
-        byte $F0,$F0,$F0,$F0,$F0,$F0,$00,$00
         byte $00,$00,$00,$00,$00,$00,$00,$00
         byte $00,$00,$00,$00,$00,$00,$00,$00
+        byte $00,$00,$00,$00,$00,$00,$00,$00
+        byte $F0,$F0,$F0,$F0,$F0,$F0,$F0,$00
         byte $00,$F0
 
 CineTitlePF1R:
@@ -53,9 +53,9 @@ CineTitlePF1R:
         byte $48,$4F,$48,$48,$4F,$00,$00,$00
         byte $00,$00,$00,$00,$00,$00,$00,$00
         byte $00,$00,$00,$00,$00,$00,$00,$00
-        byte $C0,$F0,$FC,$FF,$FF,$FF,$00,$00
         byte $00,$00,$00,$00,$00,$00,$00,$00
         byte $00,$00,$00,$00,$00,$00,$00,$00
+        byte $00,$C0,$F0,$FC,$FF,$FF,$FF,$00
         byte $00,$FF
 
 CineTitlePF2R:
@@ -64,9 +64,9 @@ CineTitlePF2R:
         byte $80,$80,$80,$80,$81,$80,$80,$80
         byte $80,$80,$80,$80,$80,$80,$80,$80
         byte $80,$80,$80,$80,$80,$80,$80,$80
-        byte $80,$80,$80,$80,$83,$8F,$80,$80
         byte $80,$80,$80,$80,$80,$80,$80,$80
         byte $80,$80,$80,$80,$80,$80,$80,$80
+        byte $80,$80,$80,$80,$80,$83,$8F,$80
         byte $80,$FF
 
         align 256
@@ -75,33 +75,53 @@ CineTitlePFColors:
         byte $0E,$0E,$0E,$0E,$4A,$4A,$0E,$0E
         byte $0E,$0E,$0E,$0E,$0E,$4A,$4A,$4A
         byte $4A,$4A,$4A,$4A,$4A,$4A,$4A,$4A
-        byte $4A,$4A,$4A,$4A,$4A,$4A,$4A,$82
-        byte $84,$86,$88,$8A,$8C,$8E,$4A,$4A
         byte $4A,$4A,$4A,$4A,$4A,$4A,$4A,$4A
         byte $4A,$4A,$4A,$4A,$4A,$4A,$4A,$4A
+        byte $4A,$4A,$4A,$4A,$4A,$4A,$4A,$4A
+        byte $82,$84,$86,$88,$8A,$8C,$8E,$4A
         byte $4A,$4A
 
-CineTitleBackgrounds:
-        byte $00,$00,$00,$00,$00,$00,$00,$00
-        byte $00,$00,$00,$00,$00,$00,$00,$00
-        byte $00,$00,$00,$00,$00,$00,$00,$00
-        byte $00,$00,$00,$00,$00,$00,$00,$00
-        byte $00,$00,$00,$00,$00,$00,$00,$00
-        byte $00,$00,$00,$00,$00,$00,$00,$00
-        byte $00,$00,$00,$00,$00,$00,$00,$00
-        byte $00,$00,$00,$00,$00,$00,$00,$00
-        byte $00,$00
+; Static two-row ending text. The old background table was unused after the
+; cinematic title kernel was finalized, so its page is reused here.
+VictorySubtitle0:
+        byte $01,$01,$00,$00,$00
+VictorySubtitle1:
+        byte $1D,$9D,$00,$00,$00
+VictorySubtitle2:
+        byte $02,$83,$00,$00,$00
+VictorySubtitle3:
+        byte $BA,$3A,$00,$00,$00
+VictorySubtitle4:
+        byte $87,$80,$00,$00,$00
+VictorySubtitle5:
+        byte $00,$00,$00,$00,$00
+
+VictoryPrompt0:
+        byte $AF,$FF,$00,$00,$00
+VictoryPrompt1:
+        byte $CB,$CF,$00,$00,$00
+VictoryPrompt2:
+        byte $B1,$F3,$00,$00,$00
+VictoryPrompt3:
+        byte $CB,$CE,$00,$00,$00
+VictoryPrompt4:
+        byte $D3,$E3,$00,$00,$00
+VictoryPrompt5:
+        byte $FF,$FF,$00,$00,$00
+
+; Preserve the original 66-byte slot so CompactText0 remains page-safe.
+        byte $00,$00,$00,$00,$00,$00
 
 CineTitlePlayer:
         byte $00,$00,$00,$00,$00,$00,$00,$00
         byte $00,$00,$00,$00,$00,$00,$00,$00
         byte $00,$00,$00,$00,$00,$00,$00,$00
-        byte $00,$00,$3C,$7E,$FF,$DB,$FF,$7E
-        byte $3C,$7E,$DB,$99,$5A,$A5,$00,$00
+        byte $00,$00,$00,$00,$00,$00,$00,$00
+        byte $00,$00,$00,$00,$00,$00,$00,$00
+        byte $00,$00,$00,$3C,$7E,$FF,$DB,$FF
+        byte $7E,$3C,$7E,$DB,$99,$5A,$A5,$00
+        byte $00,$00,$00,$00,$00,$00,$00,$00
         byte $00,$00
-        byte $00,$00,$00,$00,$00,$00,$00,$00
-        byte $00,$00,$00,$00,$00,$00,$00,$00
-        byte $00,$00,$00,$00,$00,$00,$00,$00
 
 ; Five centered lines in a variable-width 3x5 font.  Data is stored bottom-up
 ; because the cycle-critical 48-pixel kernel counts its scanline index down.

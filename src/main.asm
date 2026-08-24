@@ -178,7 +178,10 @@ Frame:
         cmp #STATE_TITLE
         bcc PositionGameOcto
         beq PositionTitleOcto
-        lda #56                ; Victory screen's 48-pixel text position.
+        lda #$03             ; Configure close copies before RESP timing.
+        sta NUSIZ0
+        sta NUSIZ1
+        lda #56                ; Center the ending strip in its text kernel.
         bne PositionOcto
 PositionTitleOcto:
         lda #60
@@ -192,7 +195,11 @@ PositionOcto:
         lda GameState
         cmp #STATE_TITLE
         bcc PositionGameDoll
-        lda #64              ; P1 position for the 48-pixel title text.
+        beq PositionTitleDoll
+        lda #64              ; Interleaved six-copy text position.
+        bne PositionDoll
+PositionTitleDoll:
+        lda #64              ; P1 position for the title's fine text.
         bne PositionDoll
 PositionGameDoll:
         lda #72
@@ -398,6 +405,11 @@ TreeGameKernel:
         beq StoreTreePlayer
 TreePlayerIndex:
         tax
+        cpx #13
+        bcc TreeLoadPlayer
+        lda #0
+        beq StoreTreePlayer
+TreeLoadPlayer:
         lda OctoLineTable,x
 StoreTreePlayer:
         sta GRP0
@@ -449,6 +461,11 @@ Boulder1GameKernel:
         beq StoreBoulder1Player
 Boulder1PlayerIndex:
         tax
+        cpx #13
+        bcc Boulder1LoadPlayer
+        lda #0
+        beq StoreBoulder1Player
+Boulder1LoadPlayer:
         lda OctoLineTable,x
 StoreBoulder1Player:
         sta GRP0
@@ -493,6 +510,11 @@ Boulder2GameKernel:
         beq StoreBoulder2Player
 Boulder2PlayerIndex:
         tax
+        cpx #13
+        bcc Boulder2LoadPlayer
+        lda #0
+        beq StoreBoulder2Player
+Boulder2LoadPlayer:
         lda OctoLineTable,x
 StoreBoulder2Player:
         sta GRP0
@@ -562,8 +584,8 @@ WaitOverscan:
         jmp Frame
 
 ; -----------------------------------------------------------------------------
-; Ending screen. The commercial-style 48-pixel kernel draws a larger green
-; survival line, a readable label, and a four-times-tall five-digit score.
+; Ending screen. The double-width 48-pixel kernel draws the larger green
+; survival line, the red subtitle, a white score block, and the replay prompt.
 ; -----------------------------------------------------------------------------
 
 VictoryVisible:
@@ -575,7 +597,7 @@ VictoryVisible:
         sta GRP0
         sta GRP1
         sta COLUBK
-        lda #$03
+        lda #$03             ; Three close copies per player make 48 pixels.
         sta NUSIZ0
         sta NUSIZ1
         lda #COLOR_OCTO_GREEN
@@ -594,12 +616,32 @@ VictoryTopBlank:
         dex
         bne VictoryTopBlank
 
-        lda #69
+        lda #51
         sta StateTimer
 
 VictoryTextKernel:
         ldy StateTimer
         lda VictoryRowMap,y
+        sta Temp
+        and #$C0
+        cmp #$40
+        beq VictoryGreenText
+        cmp #$80
+        beq VictoryRedText
+        lda #COLOR_WHITE
+        bne VictorySetTextColor
+VictoryGreenText:
+        lda #COLOR_OCTO_GREEN
+        bne VictorySetTextColor
+VictoryRedText:
+        lda #COLOR_RED
+VictorySetTextColor:
+        sta COLUP0
+        sta COLUP1
+        lda Temp
+        and #$3F
+        cmp #15
+        beq VictoryBlankLine
         tay
         lda DisplayText0,y
         sta WSYNC
@@ -609,17 +651,25 @@ VictoryTextKernel:
         lda DisplayText2,y
         sta GRP0
         lda DisplayText3,y
-        sta Temp
+        sta GameMode
         lda DisplayText4,y
         tax
         lda DisplayText5,y
-        ldy Temp
-        dec StateTimer
+        ldy GameMode
+        dec StateTimer       ; Preserve the cycle position of the six-copy kernel.
         sty GRP1
         stx GRP0
         sta GRP1
         sta GRP0
         ldy StateTimer
+        bpl VictoryTextKernel
+
+VictoryBlankLine:
+        lda #0
+        sta GRP0
+        sta GRP1
+        sta WSYNC
+        dec StateTimer
         bpl VictoryTextKernel
 
 VictoryTextDone:
@@ -628,7 +678,7 @@ VictoryTextDone:
         sta GRP1
         sta VDELP0
         sta VDELP1
-        ldx #66
+        ldx #84
 VictoryBottomBlank:
         sta WSYNC
         dex
@@ -747,10 +797,14 @@ TitleTextSetup:
         ; P0 and P1 were positioned during vertical blank. Finish the last
         ; border scanline before switching to the compact-text footer.
         sta WSYNC
+        lda #$02
+        sta VBLANK           ; Hide the completed transition scanline before
+                             ; clearing the old playfield registers and latch.
         lda #0
         sta PF0                 ; Clear the old border data first, while the
         sta PF1                 ; beam is still in horizontal blank.
         sta PF2
+        sta COLUPF              ; Prevent a residual pink playfield line.
         lda #COLOR_DARK_RED
         sta COLUBK
         lda #0
@@ -837,7 +891,15 @@ UpdateGame:
         beq UpdateDead
         cmp #STATE_CLEAR
         beq UpdateClear
+        cmp #STATE_VICTORY
+        beq CheckVictoryFire
         jmp UpdateDone
+CheckVictoryFire:
+        bit INPT4
+        bmi VictoryWaitFire
+        jmp NewGame
+VictoryWaitFire:
+        rts
 
         ; Brief celebration, then begin a faster level.
 UpdateClear:
@@ -1280,9 +1342,9 @@ SilenceAudio:
         sta SoundKind
         rts
 
-; A compact original title cue derived from broad traits measured in the
-; supplied reference: a suspended high tone and short descending answers. The
-; former steady percussion channel is intentionally silent.
+; The title cue uses one 12-frame step per item below. Letter case has no
+; musical meaning, so B and b always use the same pitch. The former steady
+; percussion channel is intentionally silent.
 UpdateTitleMusic:
         inc TitleMusicFrame
         lda TitleMusicFrame
@@ -1292,7 +1354,7 @@ UpdateTitleMusic:
         sta TitleMusicFrame
         inc TitleMusicStep
         lda TitleMusicStep
-        cmp #30
+        cmp #60
         bcc PlayTitleMusicStep
         lda #0
         sta TitleMusicStep
@@ -1304,8 +1366,17 @@ PlayTitleMusicStep:
         lda TitleMelody,x
         cmp #$FF
         beq TitleMelodyRest
+        sta Temp
+        and #$1F
         sta AUDF0
+        lda Temp
+        and #$20
+        beq TitlePureTone
+        lda #12                 ; CPU-clock tone for the lower notes.
+        bne TitleSetTone
+TitlePureTone:
         lda #4                  ; Bright pure-tone voice.
+TitleSetTone:
         sta AUDC0
         lda #7
         sta AUDV0
@@ -1525,9 +1596,9 @@ BuildTimerRow:
         bne BuildTimerRow
         rts
 
-; Build the fine-text portion of the ending in the six display strips. Rows
-; 5-9 contain a wider FINAL SCORE label, row zero is blank, and rows 1-4 hold
-; the centered five-digit value. The leading digit is always zero because
+; Build the ending in the six display strips. Rows 10-14 contain the headline,
+; rows 8-9 the red subtitle, rows 5-7 the label, rows 2-4 the score, and rows
+; 0-1 the replay prompt. The leading score digit is always zero because
 ; gameplay saturates at 9999.
 BuildVictoryText:
         lda #0
@@ -1603,61 +1674,65 @@ BuildVictoryRow:
         lda FinalLabel5,x
         sta DisplayText5+5,x
 
+        lda VictoryPrompt0,x
+        sta DisplayText0,x
+        lda VictoryPrompt1,x
+        sta DisplayText1,x
+        lda VictoryPrompt2,x
+        sta DisplayText2,x
+        lda VictoryPrompt3,x
+        sta DisplayText3,x
+        lda VictoryPrompt4,x
+        sta DisplayText4,x
+        lda VictoryPrompt5,x
+        sta DisplayText5,x
+
         cpx #4
         beq VictoryScoreRowDone
 
         lda #0
-        sta DisplayText0+1,x
-        sta DisplayText1+1,x
-        sta DisplayText2+1,x
-        sta DisplayText3+1,x
-        sta DisplayText4+1,x
-        sta DisplayText5+1,x
+        sta DisplayText0+2,x
+        sta DisplayText1+2,x
+        sta DisplayText2+2,x
+        sta DisplayText3+2,x
+        sta DisplayText4+2,x
+        sta DisplayText5+2,x
 
-        ; Pack five 3x5 digits with a one-pixel gap into the center twenty
-        ; pixels. Two digits fit in each byte as ddd0ddd0.
+        ; Give each score digit its own graphics slot. Expanding each three-bit
+        ; glyph to six bits makes the final score much easier to read.
         ldy Digit0Index
         lda DigitFont,y
-        asl
-        asl
-        asl
-        asl
-        asl
-        sta DisplayText2+1,x
+        tay
+        lda WideDigitBits,y
+        sta DisplayText0+2,x
         dec Digit0Index
 
         ldy Digit1Index
         lda DigitFont,y
-        asl
-        ora DisplayText2+1,x
-        sta DisplayText2+1,x
+        tay
+        lda WideDigitBits,y
+        sta DisplayText1+2,x
         dec Digit1Index
 
         ldy Digit2Index
         lda DigitFont,y
-        asl
-        asl
-        asl
-        asl
-        asl
-        sta DisplayText3+1,x
+        tay
+        lda WideDigitBits,y
+        sta DisplayText2+2,x
         dec Digit2Index
 
         ldy Digit3Index
         lda DigitFont,y
-        asl
-        ora DisplayText3+1,x
-        sta DisplayText3+1,x
+        tay
+        lda WideDigitBits,y
+        sta DisplayText3+2,x
         dec Digit3Index
 
         ldy PhaseTimer
         lda DigitFont,y
-        asl
-        asl
-        asl
-        asl
-        asl
-        sta DisplayText4+1,x
+        tay
+        lda WideDigitBits,y
+        sta DisplayText4+2,x
         dec PhaseTimer
 
         ; Omit the second font row to retain a readable four-row score.
@@ -1742,13 +1817,45 @@ DigitFont:
         byte 7,5,7,5,7       ; 8
         byte 7,5,7,1,7       ; 9
 
-; Original title cue, 30 steps at 12 frames per step (6 seconds). $FF is a
-; rest. TIA divisors use 2n+1 to lower the earlier melody by one octave while
-; preserving its uneasy drone and descending replies.
+; Three-bit glyphs expanded to six horizontal pixels for the ending score.
+WideDigitBits:
+        byte 0,3,12,15,48,51,60,63
+
+; Atari 800 BASIC reference cue, 60 steps at 12 frames per step (12 seconds).
+; $FF is a rest. Bit 5 selects the TIA CPU-clock tone family (AUDC=12); the
+; lower five bits are the AUDF divider. The remaining notes use the clean
+; pixel-clock pure tone (AUDC=4).
+; POKEY pitch to closest NTSC TIA frequency:
+; B 64 -> 491.7Hz -> AUDF 31 / AUDC 4
+; E-flat 47 -> 665.8Hz -> AUDF 23 / AUDC 4
+; A 72 -> 437.8Hz -> AUDF 11 / AUDC 12
+; G 80 -> 394.6Hz -> AUDF 12 / AUDC 12
+; E 101 -> 313.3Hz -> AUDF 16 / AUDC 12
+TITLE_NOTE_B      = 31
+TITLE_NOTE_EFLAT  = 23
+TITLE_NOTE_A      = $20 + 11
+TITLE_NOTE_G      = $20 + 12
+TITLE_NOTE_E      = $20 + 16
+TITLE_REST        = $FF
+
 TitleMelody:
-        byte 31,31,31,31, 31,31,31,31, 31,31,31,31
-        byte 25,25,31,31, 31,35,35,41, 35,35,31,31
-        byte 35,39,25,25,25,$FF
+        byte TITLE_NOTE_B,TITLE_REST,TITLE_NOTE_B,TITLE_REST
+        byte TITLE_NOTE_B,TITLE_REST,TITLE_REST
+        byte TITLE_NOTE_B,TITLE_REST,TITLE_NOTE_B,TITLE_REST
+        byte TITLE_NOTE_B,TITLE_REST,TITLE_REST
+        byte TITLE_NOTE_EFLAT,TITLE_REST,TITLE_NOTE_B,TITLE_REST
+        byte TITLE_NOTE_B,TITLE_REST,TITLE_NOTE_A,TITLE_REST
+        byte TITLE_NOTE_G,TITLE_REST,TITLE_NOTE_A,TITLE_REST
+        byte TITLE_NOTE_B,TITLE_REST,TITLE_REST
+        byte TITLE_NOTE_B,TITLE_REST,TITLE_NOTE_B,TITLE_REST
+        byte TITLE_NOTE_B,TITLE_REST,TITLE_REST
+        byte TITLE_NOTE_B,TITLE_REST,TITLE_NOTE_B,TITLE_REST
+        byte TITLE_NOTE_B,TITLE_REST,TITLE_REST
+        byte TITLE_NOTE_B,TITLE_REST,TITLE_NOTE_A,TITLE_REST
+        byte TITLE_NOTE_G,TITLE_REST,TITLE_NOTE_A,TITLE_REST
+        byte TITLE_NOTE_G,TITLE_REST,TITLE_NOTE_E,TITLE_REST
+        byte TITLE_NOTE_E,TITLE_REST,TITLE_REST,TITLE_REST
+        byte TITLE_REST,TITLE_REST
 
 ; "YOU SURVIVED!" in a centered variable-width 3x5 font. Rows are stored
 ; bottom-up for the title-style six-copy player kernel.
@@ -1765,39 +1872,35 @@ SurvivedText4:
 SurvivedText5:
         byte $D9,$14,$95,$15,$D9
 
-; "FINAL SCORE:" in a centered variable-width 3x5 font. Rows remain
-; bottom-up for the six-copy player kernel.
+; "FINAL SCORE:" in a centered variable-width 3x5 font. The first three
+; rows are used by the compact ending; the remaining rows are padding.
 FinalLabel0:
-        byte $85,$85,$E5,$85,$F5
+        byte $8E,$84,$C4,$01,$01
 FinalLabel1:
-        byte $29,$29,$6F,$A9,$26
+        byte $AA,$EA,$EE,$1D,$9D
 FinalLabel2:
-        byte $7B,$40,$41,$42,$41
+        byte $E0,$80,$80,$02,$83
 FinalLabel3:
-        byte $8E,$50,$90,$10,$CE
+        byte $EE,$28,$E8,$BA,$3A
 FinalLabel4:
-        byte $64,$95,$97,$94,$67
+        byte $EA,$AA,$AC,$87,$80
 FinalLabel5:
-        byte $BC,$21,$38,$A1,$3C
+        byte $E0,$84,$C0,$00,$00
 
         include "src/title_scene.inc"
 
-; Physical-row map for the enlarged victory display. The table is read from
-; index 69 down to zero: six scanlines per headline row, five blank lines,
-; three per label row, four blank lines, and four per score row.
+; Physical-row map for the ending display. The table is read from index 51
+; down to zero. Bit 6 marks green text, bit 7 marks red text, and $3F is a
+; blank row. The compact rows are stretched horizontally by the double-width
+; player copies.
 VictoryRowMap:
-        byte 1,1,1,1, 2,2,2,2, 3,3,3,3, 4,4,4,4
-        byte 0,0,0,0
-        byte 5,5,5, 6,6,6, 7,7,7, 8,8,8, 9,9,9
-        byte 0,0,0,0,0
-        byte 10,10,10,10,10,10, 11,11,11,11,11,11
-        byte 12,12,12,12,12,12, 13,13,13,13,13,13
-        byte 14,14,14,14,14,14
+        byte $3F,$3F,$3F,$00,$00,$01,$01,$3F,$3F,$02,$02,$02,$03,$03,$03,$04
+        byte $04,$04,$3F,$3F,$05,$05,$06,$06,$07,$07,$3F,$3F,$88,$88,$89,$89
+        byte $3F,$3F,$4A,$4A,$4A,$4B,$4B,$4B,$4C,$4C,$4C,$4D,$4D,$4D,$4E,$4E
+        byte $4E,$3F,$3F,$3F
 
-; A half-page makes every non-negative out-of-range player row read as zero.
-; Negative differences are rejected before indexing, leaving enough beam time
-; for three independently positioned obstacles.
-        align 128
+; Only the twelve visible octopus rows are stored. The three kernels clamp
+; larger positive row differences to zero before indexing this table.
 OctoLineTable:
         byte %00111100
         byte %01111110
@@ -1811,7 +1914,7 @@ OctoLineTable:
         byte %10011001
         byte %01011010
         byte %10100101
-        ds 116,0
+        ds 0,0
 
 ; 6507 vectors. The 2600 only uses RESET, but all vectors point somewhere safe.
         org $FFFA

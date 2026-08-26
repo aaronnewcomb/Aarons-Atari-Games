@@ -405,11 +405,6 @@ TreeGameKernel:
         beq StoreTreePlayer
 TreePlayerIndex:
         tax
-        cpx #13
-        bcc TreeLoadPlayer
-        lda #0
-        beq StoreTreePlayer
-TreeLoadPlayer:
         lda OctoLineTable,x
 StoreTreePlayer:
         sta GRP0
@@ -461,11 +456,6 @@ Boulder1GameKernel:
         beq StoreBoulder1Player
 Boulder1PlayerIndex:
         tax
-        cpx #13
-        bcc Boulder1LoadPlayer
-        lda #0
-        beq StoreBoulder1Player
-Boulder1LoadPlayer:
         lda OctoLineTable,x
 StoreBoulder1Player:
         sta GRP0
@@ -510,11 +500,6 @@ Boulder2GameKernel:
         beq StoreBoulder2Player
 Boulder2PlayerIndex:
         tax
-        cpx #13
-        bcc Boulder2LoadPlayer
-        lda #0
-        beq StoreBoulder2Player
-Boulder2LoadPlayer:
         lda OctoLineTable,x
 StoreBoulder2Player:
         sta GRP0
@@ -1899,8 +1884,8 @@ VictoryRowMap:
         byte $3F,$3F,$4A,$4A,$4A,$4B,$4B,$4B,$4C,$4C,$4C,$4D,$4D,$4D,$4E,$4E
         byte $4E,$3F,$3F,$3F
 
-; Only the twelve visible octopus rows are stored. The three kernels clamp
-; larger positive row differences to zero before indexing this table.
+; Keep the unused tail zero-filled. The cycle-critical obstacle kernels read
+; through the tail for scanlines below the visible player rows.
 OctoLineTable:
         byte %00111100
         byte %01111110
@@ -1914,7 +1899,7 @@ OctoLineTable:
         byte %10011001
         byte %01011010
         byte %10100101
-        ds 0,0
+        ds 116,0
 
 ; 6507 vectors. The 2600 only uses RESET, but all vectors point somewhere safe.
         org $FFFA

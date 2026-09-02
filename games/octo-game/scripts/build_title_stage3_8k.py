@@ -5,11 +5,13 @@ from pathlib import Path
 import hashlib
 import subprocess
 
+from build_support import resolve_dasm
+
 
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
 ROM = BUILD / "octo-game-title-stage3-8k.a26"
-DASM = ROOT / "resources" / "tools" / "dasm-2.20.17" / "dasm"
+DASM = resolve_dasm(ROOT)
 
 
 def assemble(source: str, output: Path, *defines: str) -> None:

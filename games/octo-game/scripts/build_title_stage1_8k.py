@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""Build stage 5: accepted stage 4 plus E with coral stripes."""
+"""Build the isolated clean-room stage 1 title ROM."""
 
 from pathlib import Path
 import hashlib
 import subprocess
 
+from build_support import resolve_dasm
+
 
 ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / "build"
-ROM = BUILD / "octo-game-title-stage5-8k.a26"
-DASM = ROOT / "resources" / "tools" / "dasm-2.20.17" / "dasm"
+ROM = BUILD / "octo-game-title-stage1-8k.a26"
+DASM = resolve_dasm(ROOT)
 
 
 def assemble(source: str, output: Path, *defines: str) -> None:
@@ -27,23 +29,15 @@ def assemble(source: str, output: Path, *defines: str) -> None:
 
 def main() -> int:
     BUILD.mkdir(exist_ok=True)
-    subprocess.run(["python3", "scripts/generate_title_stage5_data.py"], cwd=ROOT, check=True)
-    bank0 = BUILD / "title-stage5-bank0.bin"
-    bank1 = BUILD / "title-stage5-bank1.bin"
-    assemble(
-        "src/title_stage1_bank0.asm",
-        bank0,
-        "TITLE_STAGE2=1",
-        "TITLE_STAGE3=1",
-        "TITLE_STAGE4=1",
-        "TITLE_STAGE5=1",
-    )
+    subprocess.run(["python3", "scripts/generate_title_stage1_data.py"], cwd=ROOT, check=True)
+    bank0 = BUILD / "title-stage1-bank0.bin"
+    bank1 = BUILD / "title-stage1-bank1.bin"
+    assemble("src/title_stage1_bank0.asm", bank0)
     assemble(
         "src/main.asm",
         bank1,
         "F8_TITLE_O_EXPERIMENT=1",
         "F8_TITLE_STAGE1_EXPERIMENT=1",
-        "F8_TITLE_STAGE2_EXPERIMENT=1",
     )
 
     bank0_data = bank0.read_bytes()

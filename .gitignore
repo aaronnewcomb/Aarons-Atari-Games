@@ -1,4 +1,4 @@
-build/*
-!build/.gitkeep
+games/*/build/*
+!games/*/build/.gitkeep
 __pycache__/
 *.pyc

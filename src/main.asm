@@ -248,7 +248,11 @@ WaitVBlank:
         jmp VictoryVisible
 DrawTitleVisible:
         sta WSYNC             ; Preserve the title's preloading scanline.
+        IFCONST F8_TITLE_O_EXPERIMENT
+        sta $FFF8             ; F8: select bank 0; its next address is the title entry.
+        ELSE
         jmp TitleVisible
+        ENDIF
 DrawGameVisible:
         lda #$00
         sta WSYNC             ; Choose the path before syncing, then unblank
@@ -779,6 +783,9 @@ TitleSecondScanline:
 ; six times per scanline.  VDEL exposes the hidden graphics latches, producing
 ; a centered 48-pixel strip like the fine-print kernels in commercial games.
 TitleTextSetup:
+        IFCONST F8_TITLE_STAGE1_EXPERIMENT
+        jmp Stage1TitleRemainder
+        ENDIF
         ; P0 and P1 were positioned during vertical blank. Finish the last
         ; border scanline before switching to the compact-text footer.
         sta WSYNC
@@ -852,6 +859,30 @@ TitleTextKernel:
         sta VDELP0
         sta VDELP1
         jmp BeginOverscan
+
+        IFCONST F8_TITLE_STAGE1_EXPERIMENT
+; Bank 0 has already drawn the 26-line stage-1 frame section. Keep the rest
+; of the visible area black, then use the normal overscan and frame restart.
+Stage1TitleRemainder:
+        lda #$00
+        sta COLUBK
+        sta COLUPF
+        sta PF0
+        sta PF1
+        sta PF2
+        sta GRP0
+        sta GRP1
+        IFCONST F8_TITLE_STAGE2_EXPERIMENT
+        ldx #146             ; Stage 2 drew 20 more visible scanlines.
+        ELSE
+        ldx #166
+        ENDIF
+Stage1TitleRemainderLoop:
+        sta WSYNC
+        dex
+        bne Stage1TitleRemainderLoop
+        jmp BeginOverscan
+        ENDIF
 
 ; -----------------------------------------------------------------------------
 ; Game logic
@@ -1263,6 +1294,14 @@ KillPlayer:
 ; -----------------------------------------------------------------------------
 
 UpdateSound:
+        IFCONST F8_TITLE_STAGE1_EXPERIMENT
+        ; The reduced stage must be silent from its first frame. Bank 1 can
+        ; reach this routine once before the F8 bank switch, so do not let
+        ; title music write a tone that bank 0 would only clear afterward.
+        lda GameState
+        cmp #STATE_TITLE
+        beq Stage1SilenceAudio
+        ENDIF
         lda GameState
         cmp #STATE_TITLE
         bne UpdateEffectSound
@@ -1326,6 +1365,18 @@ SilenceAudio:
         sta AUDV1
         sta SoundKind
         rts
+
+        IFCONST F8_TITLE_STAGE1_EXPERIMENT
+Stage1SilenceAudio:
+        lda #0
+        sta AUDC0
+        sta AUDC1
+        sta AUDF0
+        sta AUDF1
+        sta AUDV0
+        sta AUDV1
+        rts
+        ENDIF
 
 ; The title cue uses one 12-frame step per item below. Letter case has no
 ; musical meaning, so B and b always use the same pitch. The former steady

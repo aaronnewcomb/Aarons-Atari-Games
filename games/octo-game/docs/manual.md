@@ -1,6 +1,6 @@
 # Octo Game Instruction Manual
 
-[Download the complete PDF manual](manual.pdf)
+[Download the complete PDF manual](https://github.com/aaronnewcomb/Aarons-Atari-Games/releases/download/v0.3.0/octo-game-v0.3.0-manual.pdf)
 
 The manual is presented below one page at a time. Each page image and the PDF
 are generated from the same artwork by `scripts/build_manual.py`.

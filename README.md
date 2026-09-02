@@ -14,6 +14,7 @@ around trees and boulders on the obstacle levels.
 
 - [Game information and build instructions](games/octo-game/README.md)
 - [Graphical game manual](games/octo-game/docs/manual.md)
+- [Download the PDF manual](https://github.com/aaronnewcomb/Aarons-Atari-Games/releases/download/v0.3.0/octo-game-v0.3.0-manual.pdf)
 - [Download the v0.3.0 ROM](https://github.com/aaronnewcomb/Aarons-Atari-Games/releases/tag/v0.3.0)
 - [Browse the source](games/octo-game/src/)
 

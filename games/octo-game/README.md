@@ -14,9 +14,6 @@ light timing, obstacle courses, scoring, and a final victory screen.
 The latest tested cartridge image is available from the
 [Octo Game v0.3.0 release](https://github.com/aaronnewcomb/Aarons-Atari-Games/releases/tag/v0.3.0).
 
-[Read the graphical manual](docs/manual.md) or
-[download the PDF edition](https://github.com/aaronnewcomb/Aarons-Atari-Games/releases/download/v0.3.0/octo-game-v0.3.0-manual.pdf).
-
 Download `octo-game.a26`, then open it with an Atari 2600 emulator such as
 [Stella](https://stella-emu.github.io/). The ROM can also be used with
 compatible flash cartridges and original hardware configured for an 8 KiB F8

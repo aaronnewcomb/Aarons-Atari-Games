@@ -15,7 +15,7 @@ else
 DASM ?= $(LOCAL_DASM)
 endif
 
-.PHONY: all release-rom legacy-4k verify rominfo run manual title-stage1-8k title-stage2-8k title-stage3-8k title-stage4-8k title-stage5-8k title-stage6-8k title-stage6-music-8k clean help
+.PHONY: all release-rom legacy-4k verify rominfo run title-stage1-8k title-stage2-8k title-stage3-8k title-stage4-8k title-stage5-8k title-stage6-8k title-stage6-music-8k clean help
 
 all: release-rom verify
 
@@ -68,9 +68,6 @@ run: all
 	@command -v stella >/dev/null 2>&1 || { echo "Stella is not installed"; exit 1; }
 	stella -audio.enabled 1 $(ROM)
 
-manual:
-	python3 scripts/build_manual.py
-
 clean:
 	find $(BUILD_DIR) -maxdepth 1 -type f ! -name .gitkeep -delete
 
@@ -86,5 +83,4 @@ help:
 	@echo "make title-stage6-8k  Complete the lower title scene and footer"
 	@echo "make title-stage6-music-8k  Restore music without changing stage-6 graphics"
 	@echo "make run    Build and launch Octo Game in Stella"
-	@echo "make manual Rebuild docs/manual.pdf and its page images"
 	@echo "make clean  Remove generated build files"

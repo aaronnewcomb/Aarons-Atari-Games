@@ -12,7 +12,7 @@ light timing, obstacle courses, scoring, and a final victory screen.
 ## Download and play
 
 The latest tested cartridge image is available from the
-[Octo Game v0.3.0 release](https://github.com/aaronnewcomb/Aarons-Atari-Games/releases/tag/v0.3.0).
+[releases page](https://github.com/aaronnewcomb/Aarons-Atari-Games/releases).
 
 Download `octo-game.a26`, then open it with an Atari 2600 emulator such as
 [Stella](https://stella-emu.github.io/). The ROM can also be used with
@@ -20,6 +20,10 @@ compatible flash cartridges and original hardware configured for an 8 KiB F8
 cartridge.
 
 ## How to play
+
+<a href="docs/octo-game-manual.pdf"><img src="docs/manual-pages/01-cover-v2.png" alt="Octo Game Atari-style manual cover" width="180"></a>
+
+[Read the Atari style manual](docs/octo-game-manual.pdf) before playing.
 
 1. Press **Fire** on the title screen.
 2. Move **Up** while the light is green to advance toward the finish line.
